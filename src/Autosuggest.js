@@ -26,6 +26,7 @@ class Autosuggest extends Component {
                                     // See: http://www.w3.org/TR/wai-aria-practices/#autocomplete
     };
     this.suggestionsFn = debounce(this.props.suggestions, 100);
+    this.onChange = props.inputAttributes.onChange || function() {};
   }
 
   resetSectionIterator(suggestions) {
@@ -110,6 +111,7 @@ class Autosuggest extends Component {
     }
 
     this.setState(newState);
+    this.onChange(newState.value);
   }
 
   onInputChange(event) {
@@ -120,6 +122,7 @@ class Autosuggest extends Component {
       valueBeforeUpDown: null
     });
 
+    this.onChange(newValue);
     this.showSuggestions(newValue);
   }
 
@@ -146,6 +149,7 @@ class Autosuggest extends Component {
         }
 
         this.setState(newState);
+        this.onChange(newState.value);
         break;
 
       case 38: // up
@@ -188,8 +192,10 @@ class Autosuggest extends Component {
   }
 
   onSuggestionMouseDown(sectionIndex, suggestionIndex) {
+    let newValue = this.getSuggestionText(sectionIndex, suggestionIndex);
+
     this.setState({
-      value: this.getSuggestionText(sectionIndex, suggestionIndex),
+      value: newValue,
       suggestions: null,
       focusedSectionIndex: null,
       focusedSuggestionIndex: null,
@@ -200,6 +206,8 @@ class Autosuggest extends Component {
         findDOMNode(this.refs.input).focus();
       }.bind(this));
     });
+
+    this.onChange(newValue);
   }
 
   getSuggestionId(sectionIndex, suggestionIndex) {
@@ -315,9 +323,9 @@ class Autosuggest extends Component {
 }
 
 Autosuggest.propTypes = {
-  inputAttributes: PropTypes.objectOf(PropTypes.string), // Attributes to pass to the input field (e.g. { id: 'my-input', className: 'sweet autosuggest' })
-  suggestions: PropTypes.func.isRequired,                // Function to get the suggestions
-  suggestionRenderer: PropTypes.func                     // Function to render a single suggestion
+  inputAttributes: PropTypes.object,      // Attributes to pass to the input field (e.g. { id: 'my-input', className: 'sweet autosuggest' })
+  suggestions: PropTypes.func.isRequired, // Function to get the suggestions
+  suggestionRenderer: PropTypes.func      // Function to render a single suggestion
 };
 
 Autosuggest.defaultProps = {
