@@ -165,6 +165,7 @@ var Autosuggest = (function (_Component) {
           newState.valueBeforeUpDown = this.state.value;
         }
 
+        this.props.onSuggestionFocused(this.getSuggestion(sectionIndex, suggestionIndex));
         this.setState(newState);
       }
     },
@@ -244,6 +245,7 @@ var Autosuggest = (function (_Component) {
     },
     onSuggestionMouseEnter: {
       value: function onSuggestionMouseEnter(sectionIndex, suggestionIndex) {
+        this.props.onSuggestionFocused(this.getSuggestion(sectionIndex, suggestionIndex));
         this.setState({
           focusedSectionIndex: sectionIndex,
           focusedSuggestionIndex: suggestionIndex
@@ -401,6 +403,7 @@ Autosuggest.propTypes = {
   suggestionValue: PropTypes.func, // Function that maps suggestion object to input value (must be implemented when suggestions are objects)
   showWhen: PropTypes.func, // Function that determines whether to show suggestions or not
   onSuggestionSelected: PropTypes.func, // This function is called when suggestion is selected via mouse click or Enter
+  onSuggestionFocused: PropTypes.func, // This function is called when suggestion is focused via mouse hover or up/down keys
   inputAttributes: PropTypes.objectOf(PropTypes.string) // Attributes to pass to the input field (e.g. { id: 'my-input', className: 'sweet autosuggest' })
 };
 
@@ -409,5 +412,6 @@ Autosuggest.defaultProps = {
     return input.trim().length > 0;
   },
   onSuggestionSelected: function () {},
+  onSuggestionFocused: function () {},
   inputAttributes: {}
 };
