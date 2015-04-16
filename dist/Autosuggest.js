@@ -220,6 +220,8 @@ var Autosuggest = (function (_Component) {
             }
 
             this.setState(newState);
+            this.props.onSuggestionUnfocused(lastFocusedSuggestion);
+            lastFocusedSuggestion = null;
             break;
 
           case 38:
