@@ -8,6 +8,25 @@ import sectionIterator from './sectionIterator';
 let lastSuggestionsInputValue = null, lastFocusedSuggestion = null, guid = 0;
 
 export default class Autosuggest extends Component {
+  static propTypes = {
+    suggestions: PropTypes.func.isRequired,               // Function to get the suggestions
+    suggestionRenderer: PropTypes.func,                   // Function that renders a given suggestion (must be implemented when suggestions are objects)
+    suggestionValue: PropTypes.func,                      // Function that maps suggestion object to input value (must be implemented when suggestions are objects)
+    showWhen: PropTypes.func,                             // Function that determines whether to show suggestions or not
+    onSuggestionSelected: PropTypes.func,                 // This function is called when suggestion is selected via mouse click or Enter
+    onSuggestionFocused: PropTypes.func,                  // This function is called when suggestion is focused via mouse hover or up/down keys
+    onSuggestionUnfocused: PropTypes.func,                // This function is called when suggestion is unfocused via mouse hover or up/down keys
+    inputAttributes: PropTypes.objectOf(PropTypes.string) // Attributes to pass to the input field (e.g. { id: 'my-input', className: 'sweet autosuggest' })
+  }
+
+  static defaultProps = {
+    showWhen: input => input.trim().length > 0,
+    onSuggestionSelected: () => {},
+    onSuggestionFocused: () => {},
+    onSuggestionUnfocused: () => {},
+    inputAttributes: {}
+  }
+
   constructor(props) {
     super();
 
@@ -41,14 +60,16 @@ export default class Autosuggest extends Component {
            typeof suggestions[0].suggestions !== 'undefined';
   }
 
-  setSuggestionsState(suggestions) {
+  setSuggestionsState(suggestions, cb) {
+    cb = typeof cb !== 'undefined' ? cb : () => {};
+
     this.resetSectionIterator(suggestions);
     this.setState({
       suggestions: suggestions,
       focusedSectionIndex: null,
       focusedSuggestionIndex: null,
       valueBeforeUpDown: null
-    });
+    }, cb);
   }
 
   suggestionsExist(suggestions) {
@@ -127,9 +148,23 @@ export default class Autosuggest extends Component {
 
     this.setState(newState);
 
-    this.props.onSuggestionUnfocused(lastFocusedSuggestion);
+    this.onSuggestionUnfocused();
+    if(suggestionIndex !== null) {
+      this.props.onSuggestionFocused(suggestion);
+    }
     lastFocusedSuggestion = suggestion;
-    this.props.onSuggestionFocused(suggestion);
+  }
+
+  onSuggestionUnfocused() {
+    if (lastFocusedSuggestion != null) {
+      this.props.onSuggestionUnfocused(lastFocusedSuggestion);
+    }
+  }
+
+  onSuggestionSelected(suggestion, event) {
+    this.onSuggestionUnfocused();
+    this.props.onSuggestionSelected(suggestion, event);
+    lastFocusedSuggestion = null;
   }
 
   onInputChange(event) {
@@ -148,14 +183,19 @@ export default class Autosuggest extends Component {
 
     switch (event.keyCode) {
       case 13: // enter
+        let afterRender = () => {};
+        let suggestion = this.getSuggestion(
+          this.state.focusedSectionIndex,
+          this.state.focusedSuggestionIndex
+        );
         if (this.state.valueBeforeUpDown !== null && this.state.focusedSuggestionIndex !== null) {
-          this.props.onSuggestionSelected(
-            this.getSuggestion(this.state.focusedSectionIndex, this.state.focusedSuggestionIndex),
-            event
-          );
+          afterRender = this.onSuggestionSelected.bind(this, suggestion, event);
         }
 
-        this.setSuggestionsState(null);
+        this.setSuggestionsState(null, () => {
+          // This code executes after the component is re-rendered
+          setTimeout(afterRender);
+        });
         break;
 
       case 27: // escape
@@ -173,7 +213,7 @@ export default class Autosuggest extends Component {
         }
 
         this.setState(newState);
-        this.props.onSuggestionUnfocused(lastFocusedSuggestion);
+        this.onSuggestionUnfocused();
         lastFocusedSuggestion = null;
         break;
 
@@ -200,6 +240,8 @@ export default class Autosuggest extends Component {
 
   onInputBlur() {
     this.setSuggestionsState(null);
+    this.onSuggestionUnfocused();
+    lastFocusedSuggestion = null;
   }
 
   onSuggestionMouseEnter(sectionIndex, suggestionIndex) {
@@ -209,8 +251,8 @@ export default class Autosuggest extends Component {
       focusedSuggestionIndex: suggestionIndex
     });
 
-    lastFocusedSuggestion = suggestion;
     this.props.onSuggestionFocused(suggestion);
+    lastFocusedSuggestion = suggestion;
   }
 
   onSuggestionMouseLeave() {
@@ -219,10 +261,11 @@ export default class Autosuggest extends Component {
       focusedSuggestionIndex: null
     });
 
-    this.props.onSuggestionUnfocused(lastFocusedSuggestion);
+    this.onSuggestionUnfocused();
   }
 
   onSuggestionMouseDown(sectionIndex, suggestionIndex, event) {
+    let suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
     this.setState({
       value: this.getSuggestionValue(sectionIndex, suggestionIndex),
       suggestions: null,
@@ -231,10 +274,11 @@ export default class Autosuggest extends Component {
       valueBeforeUpDown: null
     }, function() {
       // This code executes after the component is re-rendered
-      setTimeout( () => findDOMNode(this.refs.input).focus() );
+      setTimeout( () => {
+        findDOMNode(this.refs.input).focus();
+        this.onSuggestionSelected(suggestion, event);
+      });
     });
-
-    this.props.onSuggestionSelected(this.getSuggestion(sectionIndex, suggestionIndex), event);
   }
 
   getSuggestionId(sectionIndex, suggestionIndex) {
@@ -347,22 +391,3 @@ export default class Autosuggest extends Component {
     );
   }
 }
-
-Autosuggest.propTypes = {
-  suggestions: PropTypes.func.isRequired,                // Function to get the suggestions
-  suggestionRenderer: PropTypes.func,                    // Function that renders a given suggestion (must be implemented when suggestions are objects)
-  suggestionValue: PropTypes.func,                       // Function that maps suggestion object to input value (must be implemented when suggestions are objects)
-  showWhen: PropTypes.func,                              // Function that determines whether to show suggestions or not
-  onSuggestionSelected: PropTypes.func,                  // This function is called when suggestion is selected via mouse click or Enter
-  onSuggestionFocused: PropTypes.func,                   // This function is called when suggestion is focused via mouse hover or up/down keys
-  onSuggestionUnfocused: PropTypes.func,                 // This function is called when suggestion is unfocused via mouse hover or up/down keys
-  inputAttributes: PropTypes.objectOf(PropTypes.string)  // Attributes to pass to the input field (e.g. { id: 'my-input', className: 'sweet autosuggest' })
-};
-
-Autosuggest.defaultProps = {
-  showWhen: input => input.trim().length > 0,
-  onSuggestionSelected: () => {},
-  onSuggestionFocused: () => {},
-  onSuggestionUnfocused: () => {},
-  inputAttributes: {}
-};

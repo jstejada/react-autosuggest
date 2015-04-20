@@ -111,6 +111,10 @@ function mouseOverBetweenSuggestions(suggestionIndex1, suggestionIndex2) {
   mouseOver(suggestion1, suggestion2);
 }
 
+function clickOutside() {
+  Simulate.blur(input);
+}
+
 function clickEscape() {
   Simulate.keyDown(input, { keyCode: 27 });
 }
@@ -376,6 +380,7 @@ describe('Autosuggest', function() {
 
       it('should call onSuggestionSelected when suggestion is selected using mouse', function() {
         mouseDownSuggestion(1);
+        jest.runAllTimers();
         expect(onSuggestionSelected).toBeCalledWith('Mordialloc', jasmine.any(SyntheticEvent));
       });
 
@@ -399,6 +404,7 @@ describe('Autosuggest', function() {
       it('should call onSuggestionSelected when suggestion is selected using keyboard', function() {
         clickDown();
         clickEnter();
+        jest.runAllTimers();
         expect(onSuggestionSelected).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' }, jasmine.any(SyntheticEvent));
       });
 
@@ -422,88 +428,114 @@ describe('Autosuggest', function() {
     });
   });
 
-  describe('onSuggestionFocused and onSuggestionUnfocused', function() {
+  describe('onSuggestionFocused', function() {
     beforeEach(function() {
       onSuggestionFocused.mockClear();
-      onSuggestionUnfocused.mockClear();
+      createAutosuggest(
+        <Autosuggest suggestions={getSuburbStrings}
+                     onSuggestionFocused={onSuggestionFocused} />
+      );
+      setInputValue('m');
     });
 
-    describe('String suggestions', function() {
-      beforeEach(function() {
-        createAutosuggest(
-          <Autosuggest suggestions={getSuburbStrings}
-                       onSuggestionFocused={onSuggestionFocused}
-                       onSuggestionUnfocused={onSuggestionUnfocused} />
-        );
-        setInputValue('m');
-      });
+    describe('Mouse interactions', function() {
 
-      it('should call onSuggestionFocused when suggestion is focused using mouse', function() {
+      it('should call onSuggestionFocused when suggestion focused using mouse', function() {
         mouseOverFromInputToSuggestion(1);
         expect(onSuggestionFocused).toBeCalledWith('Mordialloc');
       });
+    });
 
-      it('should call onSuggestionUnfocused when suggestion is unfocused using mouse', function() {
-        mouseOverFromInputToSuggestion(0);
-        mouseOverBetweenSuggestions(0, 1);
-        expect(onSuggestionUnfocused).toBeCalledWith('Mill Park');
-      });
+    describe('Keyboard interactions', function() {
 
-      it('should call onSuggestionFocused when suggestion is focused using keyboard', function() {
+      it('should call onSuggestionFocused when suggestion focused using Up/Down keys', function() {
         clickDown();
         expect(onSuggestionFocused).toBeCalledWith('Mill Park');
       });
 
-      it('should call onSuggestionUnfocused when suggestion is unfocused using up/down keys', function() {
+      it('should not call onSuggestionFocused when first suggestion is focused and Up key is clicked', function() {
         clickDown();
-        clickDown();
-        expect(onSuggestionUnfocused).toBeCalledWith('Mill Park');
+        onSuggestionFocused.mockClear();
+        clickUp();
+        expect(onSuggestionFocused).not.toBeCalled();
       });
 
-      it('should call onSuggestionUnfocused when suggestion is unfocused using ESC key', function() {
+      it('should not call onSuggestionFocused when last suggestion is focused and Down key is clicked', function() {
         clickDown();
-        clickEscape();
-        expect(onSuggestionUnfocused).toBeCalledWith('Mill Park');
+        clickDown();
+        onSuggestionFocused.mockClear();
+        clickDown();
+        expect(onSuggestionFocused).not.toBeCalled();
       });
     });
+  });
 
-    describe('Object suggestions', function() {
-      beforeEach(function() {
-        createAutosuggest(
-          <Autosuggest suggestions={getSuburbObjects}
-                       suggestionRenderer={renderSuburbObject}
-                       suggestionValue={getSuburbObjectValue}
-                       onSuggestionFocused={onSuggestionFocused}
-                       onSuggestionUnfocused={onSuggestionUnfocused} />
-        );
-        setInputValue('m');
-      });
+  describe('onSuggestionUnfocused', function() {
+    beforeEach(function() {
+      onSuggestionUnfocused.mockClear();
+      createAutosuggest(
+        <Autosuggest suggestions={getSuburbObjects}
+                     suggestionRenderer={renderSuburbObject}
+                     suggestionValue={getSuburbObjectValue}
+                     onSuggestionUnfocused={onSuggestionUnfocused} />
+      );
+      setInputValue('m');
+    });
 
-      it('should call onSuggestionFocused when suggestion is focused using mouse', function() {
-        mouseOverFromInputToSuggestion(0);
-        expect(onSuggestionFocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
-      });
+    describe('Mouse interactions', function() {
 
-      it('should call onSuggestionUnfocused when suggestion is unfocused using mouse', function() {
+      it('should call onSuggestionUnfocused when suggestion unfocused using mouse', function() {
         mouseOverFromInputToSuggestion(0);
         mouseOverBetweenSuggestions(0, 1);
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
       });
 
-      it('should call onSuggestionFocused when suggestion is focused using keyboard', function() {
-        clickDown();
-        expect(onSuggestionFocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
+      it('should call onSuggestionUnfocused when suggestion selected with mouse', function() {
+        mouseOverFromInputToSuggestion(0);
+        mouseDownSuggestion(0);
+        jest.runAllTimers();
+        expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
       });
+    });
 
-      it('should call onSuggestionUnfocused when suggestion is unfocused using up/down keys', function() {
+    describe('Keyboard interactions', function() {
+
+      it('should call onSuggestionUnfocused when suggestion unfocused using Up/Down keys', function() {
         clickDown();
         clickDown();
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
       });
 
-      it('should call onSuggestionUnfocused when suggestion is unfocused using ESC key', function() {
+      it('should call onSuggestionUnfocused when ESC key pressed and suggestion is focused', function() {
         clickDown();
         clickEscape();
+        expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
+      });
+
+      it('should not call onSuggestionUnfocused when ESC key pressed and no suggestion focused', function() {
+        clickEscape();
+        expect(onSuggestionUnfocused).not.toBeCalled();
+      });
+
+      it('should call onSuggestionUnfocused when clicking outside and suggestion is focused', function() {
+        clickDown();
+        clickOutside();
+        expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
+      });
+
+      it('should not call onSuggestionUnfocused when clicking outside and no suggestion focused', function() {
+        clickDown();
+        clickDown();
+        clickDown();
+        onSuggestionUnfocused.mockClear();
+        clickOutside();
+        expect(onSuggestionUnfocused).not.toBeCalled();
+      });
+
+      it('should call onSuggestionUnfocused when suggestion selected with Enter key', function() {
+        clickDown();
+        clickEnter();
+        jest.runAllTimers();
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
       });
     });
