@@ -60,14 +60,16 @@ export default class Autosuggest extends Component {
            typeof suggestions[0].suggestions !== 'undefined';
   }
 
-  setSuggestionsState(suggestions) {
+  setSuggestionsState(suggestions, cb) {
+    cb = typeof cb !== 'undefined' ? cb : () => {};
+
     this.resetSectionIterator(suggestions);
     this.setState({
       suggestions: suggestions,
       focusedSectionIndex: null,
       focusedSuggestionIndex: null,
       valueBeforeUpDown: null
-    });
+    }, cb);
   }
 
   suggestionsExist(suggestions) {
@@ -159,12 +161,9 @@ export default class Autosuggest extends Component {
     }
   }
 
-  onSuggestionSelected(sectionIndex, suggestionIndex, event) {
+  onSuggestionSelected(suggestion, event) {
     this.onSuggestionUnfocused();
-    this.props.onSuggestionSelected(
-      this.getSuggestion(sectionIndex, suggestionIndex),
-      event
-    );
+    this.props.onSuggestionSelected(suggestion, event);
     lastFocusedSuggestion = null;
   }
 
@@ -184,15 +183,19 @@ export default class Autosuggest extends Component {
 
     switch (event.keyCode) {
       case 13: // enter
+        let afterRender = () => {};
+        let suggestion = this.getSuggestion(
+          this.state.focusedSectionIndex,
+          this.state.focusedSuggestionIndex
+        );
         if (this.state.valueBeforeUpDown !== null && this.state.focusedSuggestionIndex !== null) {
-          this.onSuggestionSelected(
-            this.state.focusedSectionIndex,
-            this.state.focusedSuggestionIndex,
-            event
-          );
+          afterRender = this.onSuggestionSelected.bind(this, suggestion, event);
         }
 
-        this.setSuggestionsState(null);
+        this.setSuggestionsState(null, () => {
+          // This code executes after the component is re-rendered
+          setTimeout(afterRender);
+        });
         break;
 
       case 27: // escape
@@ -262,6 +265,7 @@ export default class Autosuggest extends Component {
   }
 
   onSuggestionMouseDown(sectionIndex, suggestionIndex, event) {
+    let suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
     this.setState({
       value: this.getSuggestionValue(sectionIndex, suggestionIndex),
       suggestions: null,
@@ -270,10 +274,11 @@ export default class Autosuggest extends Component {
       valueBeforeUpDown: null
     }, function() {
       // This code executes after the component is re-rendered
-      setTimeout( () => findDOMNode(this.refs.input).focus() );
+      setTimeout( () => {
+        findDOMNode(this.refs.input).focus();
+        this.onSuggestionSelected(suggestion, event);
+      });
     });
-
-    this.onSuggestionSelected(sectionIndex, suggestionIndex, event);
   }
 
   getSuggestionId(sectionIndex, suggestionIndex) {
