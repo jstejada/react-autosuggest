@@ -380,6 +380,7 @@ describe('Autosuggest', function() {
 
       it('should call onSuggestionSelected when suggestion is selected using mouse', function() {
         mouseDownSuggestion(1);
+        jest.runAllTimers();
         expect(onSuggestionSelected).toBeCalledWith('Mordialloc', jasmine.any(SyntheticEvent));
       });
 
@@ -403,6 +404,7 @@ describe('Autosuggest', function() {
       it('should call onSuggestionSelected when suggestion is selected using keyboard', function() {
         clickDown();
         clickEnter();
+        jest.runAllTimers();
         expect(onSuggestionSelected).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' }, jasmine.any(SyntheticEvent));
       });
 
@@ -491,6 +493,7 @@ describe('Autosuggest', function() {
       it('should call onSuggestionUnfocused when suggestion selected with mouse', function() {
         mouseOverFromInputToSuggestion(0);
         mouseDownSuggestion(0);
+        jest.runAllTimers();
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
       });
     });
@@ -532,6 +535,7 @@ describe('Autosuggest', function() {
       it('should call onSuggestionUnfocused when suggestion selected with Enter key', function() {
         clickDown();
         clickEnter();
+        jest.runAllTimers();
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
       });
     });
