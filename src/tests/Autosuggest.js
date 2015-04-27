@@ -439,7 +439,6 @@ describe('Autosuggest', function() {
     });
 
     describe('Mouse interactions', function() {
-
       it('should call onSuggestionFocused when suggestion focused using mouse', function() {
         mouseOverFromInputToSuggestion(1);
         expect(onSuggestionFocused).toBeCalledWith('Mordialloc');
@@ -447,10 +446,17 @@ describe('Autosuggest', function() {
     });
 
     describe('Keyboard interactions', function() {
-
       it('should call onSuggestionFocused when suggestion focused using Up/Down keys', function() {
         clickDown();
         expect(onSuggestionFocused).toBeCalledWith('Mill Park');
+      });
+
+      it('should not call onSuggestionFocused when Up/Down keys are pressed after ESC is pressed', function() {
+        clickDown();
+        clickEscape();
+        onSuggestionFocused.mockClear();
+        clickDown();
+        expect(onSuggestionFocused).not.toBeCalled();
       });
 
       it('should not call onSuggestionFocused when first suggestion is focused and Up key is clicked', function() {
@@ -465,6 +471,16 @@ describe('Autosuggest', function() {
         clickDown();
         onSuggestionFocused.mockClear();
         clickDown();
+        expect(onSuggestionFocused).not.toBeCalled();
+      });
+    });
+
+    describe('Combined interactions', function() {
+      it('should not call onSuggestionFocused twice if focusing same suggestion with keyboard and then with mouse', function() {
+        clickDown();
+        expect(onSuggestionFocused).toBeCalledWith('Mill Park');
+        onSuggestionFocused.mockClear();
+        mouseOverFromInputToSuggestion(0);
         expect(onSuggestionFocused).not.toBeCalled();
       });
     });
@@ -483,7 +499,6 @@ describe('Autosuggest', function() {
     });
 
     describe('Mouse interactions', function() {
-
       it('should call onSuggestionUnfocused when suggestion unfocused using mouse', function() {
         mouseOverFromInputToSuggestion(0);
         mouseOverBetweenSuggestions(0, 1);
@@ -499,11 +514,19 @@ describe('Autosuggest', function() {
     });
 
     describe('Keyboard interactions', function() {
-
       it('should call onSuggestionUnfocused when suggestion unfocused using Up/Down keys', function() {
         clickDown();
+        expect(onSuggestionUnfocused).not.toBeCalled();
         clickDown();
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
+      });
+
+      it('should not call onSuggestionUnfocused when Up/Down keys are pressed after ESC is pressed', function() {
+        clickDown();
+        clickEscape();
+        onSuggestionUnfocused.mockClear();
+        clickDown();
+        expect(onSuggestionUnfocused).not.toBeCalled();
       });
 
       it('should call onSuggestionUnfocused when ESC key pressed and suggestion is focused', function() {
@@ -532,11 +555,31 @@ describe('Autosuggest', function() {
         expect(onSuggestionUnfocused).not.toBeCalled();
       });
 
-      it('should call onSuggestionUnfocused when suggestion selected with Enter key', function() {
+      it('should call onSuggestionUnfocused when Enter is pressed and suggestion is focused', function() {
         clickDown();
         clickEnter();
         jest.runAllTimers();
         expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
+      });
+
+      it('should not call onSuggestionUnfocused when Enter is pressed and no suggestion focused', function() {
+        clickEnter();
+        expect(onSuggestionUnfocused).not.toBeCalled();
+      });
+
+      it('should call onSuggestionUnfocused when input value is changed and suggestion is focused', function() {
+        clickDown();
+        setInputValue(input.value.slice(0, -1));
+        expect(onSuggestionUnfocused).toBeCalledWith({ suburb: 'Mill Park', postcode: '3083' });
+      });
+
+      it('should not call onSuggestionUnfocused when input value is changed and no suggestion focused', function() {
+        clickDown();
+        clickDown();
+        clickDown();
+        onSuggestionUnfocused.mockClear();
+        setInputValue(input.value.slice(0, -1));
+        expect(onSuggestionUnfocused).not.toBeCalled();
       });
     });
   });

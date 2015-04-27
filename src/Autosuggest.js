@@ -132,7 +132,6 @@ export default class Autosuggest extends Component {
 
   focusOnSuggestion(suggestionPosition) {
     let [sectionIndex, suggestionIndex] = suggestionPosition;
-    let suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
     let newState = {
       focusedSectionIndex: sectionIndex,
       focusedSuggestionIndex: suggestionIndex,
@@ -149,7 +148,12 @@ export default class Autosuggest extends Component {
     this.setState(newState);
 
     this.onSuggestionUnfocused();
-    if(suggestionIndex !== null) {
+    this.onSuggestionFocused(sectionIndex, suggestionIndex);
+  }
+
+  onSuggestionFocused(sectionIndex, suggestionIndex) {
+    let suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
+    if(suggestionIndex !== null && suggestion !== lastFocusedSuggestion) {
       this.props.onSuggestionFocused(suggestion);
     }
     lastFocusedSuggestion = suggestion;
@@ -159,12 +163,12 @@ export default class Autosuggest extends Component {
     if (lastFocusedSuggestion != null) {
       this.props.onSuggestionUnfocused(lastFocusedSuggestion);
     }
+    lastFocusedSuggestion = null;
   }
 
   onSuggestionSelected(suggestion, event) {
     this.onSuggestionUnfocused();
     this.props.onSuggestionSelected(suggestion, event);
-    lastFocusedSuggestion = null;
   }
 
   onInputChange(event) {
@@ -176,6 +180,7 @@ export default class Autosuggest extends Component {
     });
 
     this.showSuggestions(newValue);
+    this.onSuggestionUnfocused();
   }
 
   onInputKeyDown(event) {
@@ -214,7 +219,6 @@ export default class Autosuggest extends Component {
 
         this.setState(newState);
         this.onSuggestionUnfocused();
-        lastFocusedSuggestion = null;
         break;
 
       case 38: // up
@@ -241,18 +245,15 @@ export default class Autosuggest extends Component {
   onInputBlur() {
     this.setSuggestionsState(null);
     this.onSuggestionUnfocused();
-    lastFocusedSuggestion = null;
   }
 
   onSuggestionMouseEnter(sectionIndex, suggestionIndex) {
-    let suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
     this.setState({
       focusedSectionIndex: sectionIndex,
       focusedSuggestionIndex: suggestionIndex
     });
 
-    this.props.onSuggestionFocused(suggestion);
-    lastFocusedSuggestion = suggestion;
+    this.onSuggestionFocused(sectionIndex, suggestionIndex);
   }
 
   onSuggestionMouseLeave() {

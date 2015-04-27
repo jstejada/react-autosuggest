@@ -23,7 +23,7 @@
 * Full control over [styling](#styling) (we just provide the mechanics and classes for you)
 * Full control over [when to show the suggestions](#showWhenOption) (e.g. when user types 2 or more characters)
 * Ability to [pass props to the input field](#inputAttributesOption) (e.g. initial value, placeholder)
-* Various events for maximum flexibility: [onSuggestionSelected](#onSuggestionSelectedOption) (more coming soon...)
+* Various events for maximum flexibility: [onSuggestionSelected](#onSuggestionSelectedOption), [onSuggestionFocused](#onSuggestionFocusedOption), [onSuggestionUnfocused](#onSuggestionUnfocusedOption)
 
 ## Installation
 
@@ -195,7 +195,15 @@ function onSuggestionSelected(suggestion, event) {
 <a name="onSuggestionFocusedOption"></a>
 ##### onSuggestionFocused (optional)
 
-This function will be called when suggestion is focused via mouse hover or up/down keys. It has one parameter which is the focused [suggestion](#suggestion) (string or object).
+This function will be called when suggestion is focused via mouse hover or Up/Down keys.
+
+```js
+function(suggestion) {
+  ...
+}
+```
+
+* [suggestion](#suggestion) - The focused suggestion
 
 For example:
 
@@ -213,7 +221,15 @@ function onSuggestionFocused(suggestion) { // In this example 'suggestion' is a 
 <a name="onSuggestionUnfocusedOption"></a>
 ##### onSuggestionUnfocused (optional)
 
-This function will be called when suggestion is unfocused via mouse hover or up/down keys. It has one parameter which is the unfocused [suggestion](#suggestion) (string or object).
+This function will be called when suggestion is unfocused via mouse hover, Up/Down keys, ESC key, when clicking outside `<Autosuggest />` input, or when a suggestion is selected.
+
+```js
+function(suggestion) {
+  ...
+}
+```
+
+* [suggestion](#suggestion) - The unfocused suggestion
 
 For example:
 
