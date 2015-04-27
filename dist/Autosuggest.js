@@ -167,7 +167,6 @@ var Autosuggest = (function (_Component) {
       var sectionIndex = _suggestionPosition[0];
       var suggestionIndex = _suggestionPosition[1];
 
-      var suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
       var newState = {
         focusedSectionIndex: sectionIndex,
         focusedSuggestionIndex: suggestionIndex,
@@ -182,7 +181,13 @@ var Autosuggest = (function (_Component) {
       this.setState(newState);
 
       this.onSuggestionUnfocused();
-      if (suggestionIndex !== null) {
+      this.onSuggestionFocused(sectionIndex, suggestionIndex);
+    }
+  }, {
+    key: 'onSuggestionFocused',
+    value: function onSuggestionFocused(sectionIndex, suggestionIndex) {
+      var suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
+      if (suggestionIndex !== null && suggestion !== lastFocusedSuggestion) {
         this.props.onSuggestionFocused(suggestion);
       }
       lastFocusedSuggestion = suggestion;
@@ -193,13 +198,13 @@ var Autosuggest = (function (_Component) {
       if (lastFocusedSuggestion != null) {
         this.props.onSuggestionUnfocused(lastFocusedSuggestion);
       }
+      lastFocusedSuggestion = null;
     }
   }, {
     key: 'onSuggestionSelected',
     value: function onSuggestionSelected(suggestion, event) {
       this.onSuggestionUnfocused();
       this.props.onSuggestionSelected(suggestion, event);
-      lastFocusedSuggestion = null;
     }
   }, {
     key: 'onInputChange',
@@ -212,6 +217,7 @@ var Autosuggest = (function (_Component) {
       });
 
       this.showSuggestions(newValue);
+      this.onSuggestionUnfocused();
     }
   }, {
     key: 'onInputKeyDown',
@@ -252,7 +258,6 @@ var Autosuggest = (function (_Component) {
 
           this.setState(newState);
           this.onSuggestionUnfocused();
-          lastFocusedSuggestion = null;
           break;
 
         case 38:
@@ -282,19 +287,16 @@ var Autosuggest = (function (_Component) {
     value: function onInputBlur() {
       this.setSuggestionsState(null);
       this.onSuggestionUnfocused();
-      lastFocusedSuggestion = null;
     }
   }, {
     key: 'onSuggestionMouseEnter',
     value: function onSuggestionMouseEnter(sectionIndex, suggestionIndex) {
-      var suggestion = this.getSuggestion(sectionIndex, suggestionIndex);
       this.setState({
         focusedSectionIndex: sectionIndex,
         focusedSuggestionIndex: suggestionIndex
       });
 
-      this.props.onSuggestionFocused(suggestion);
-      lastFocusedSuggestion = suggestion;
+      this.onSuggestionFocused(sectionIndex, suggestionIndex);
     }
   }, {
     key: 'onSuggestionMouseLeave',
